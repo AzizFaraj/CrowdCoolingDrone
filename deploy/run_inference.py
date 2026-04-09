@@ -36,6 +36,7 @@ def main() -> None:
     parser.add_argument("--warmup-frames", type=int, default=20)
     parser.add_argument("--output-dir", type=Path, default=Path("deploy/runs/default"))
     parser.add_argument("--save-video", action="store_true")
+    parser.add_argument("--show", action="store_true", help="Display live overlay in an OpenCV window.")
     parser.add_argument("--altitude-m", type=float)
     parser.add_argument("--fx", type=float)
     parser.add_argument("--fy", type=float)
@@ -98,8 +99,11 @@ def main() -> None:
     csv_writer.writeheader()
 
     latency_records = {key: [] for key in ("capture_ms", "preprocess_ms", "inference_ms", "postprocess_ms", "decision_ms", "total_ms")}
+    total_frames_read = 0
+    measured_frames = 0
 
     for frame_index, (frame_id, frame, capture_ms) in enumerate(frame_iter(args.source)):
+        total_frames_read += 1
         if args.max_frames is not None and frame_index >= args.max_frames:
             break
 
@@ -133,6 +137,7 @@ def main() -> None:
         )
 
         if frame_index >= args.warmup_frames:
+            measured_frames += 1
             payload = decision.to_dict()
             csv_writer.writerow(
                 {
@@ -163,7 +168,12 @@ def main() -> None:
             for key in latency_records:
                 latency_records[key].append(payload["latency_ms"][key])
 
-        if args.save_video:
+        overlay_frame = None
+        if args.save_video or args.show:
+            overlay_frame = frame.copy()
+            draw_overlay(overlay_frame, decision)
+
+        if args.save_video and overlay_frame is not None:
             if writer is None:
                 video_path = args.output_dir / "overlay.mp4"
                 writer = cv2.VideoWriter(
@@ -172,16 +182,29 @@ def main() -> None:
                     20.0,
                     (frame.shape[1], frame.shape[0]),
                 )
-            overlay_frame = frame.copy()
-            draw_overlay(overlay_frame, decision)
             writer.write(overlay_frame)
+
+        if args.show and overlay_frame is not None:
+            cv2.imshow(f"CrowdCooling - {args.camera_role}", overlay_frame)
+            key = cv2.waitKey(1) & 0xFF
+            if key in (27, ord("q")):
+                break
 
     csv_handle.close()
     jsonl_handle.close()
     if writer is not None:
         writer.release()
+    if args.show:
+        cv2.destroyAllWindows()
+
+    if total_frames_read == 0:
+        raise RuntimeError(
+            "No frames were read from the source. Check the camera pipeline, source path, or OpenCV GStreamer support."
+        )
 
     summary = {key: summarize_latency(values) for key, values in latency_records.items()}
+    summary["frames_read"] = total_frames_read
+    summary["frames_measured"] = measured_frames
     (args.output_dir / "latency_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
 
