@@ -31,10 +31,11 @@ sudo apt-get install -y \
 python3 -m venv --system-site-packages ~/venvs/crowdcooling
 source ~/venvs/crowdcooling/bin/activate
 python3 -m pip install --upgrade pip setuptools wheel
-python3 -m pip install numpy==1.26.1
+python3 -m pip install numpy==1.24.4
 ```
 
 `--system-site-packages` lets the venv see the system OpenCV package from JetPack.
+`numpy==1.24.4` is used because this board is on Python `3.8.10`; newer `numpy` `1.26.x` wheels are not published for `cp38`.
 
 ## 3. Install PyTorch for JetPack 5.1.2
 
