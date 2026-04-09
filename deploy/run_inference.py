@@ -109,6 +109,7 @@ def main() -> None:
 
         infer_start = time.perf_counter()
         result = model.predict(frame, conf=args.conf, iou=args.iou, imgsz=imgsz, device=args.device, verbose=False)[0]
+        detected_boxes = boxes_from_result(result)
         wall_ms = (time.perf_counter() - infer_start) * 1000.0
         speed = getattr(result, "speed", {}) or {}
         latency = LatencyBreakdown(
@@ -121,7 +122,7 @@ def main() -> None:
         decision = decision_engine.update(
             frame_id=frame_id,
             timestamp_ms=int(time.time() * 1000),
-            boxes=boxes_from_result(result),
+            boxes=detected_boxes,
             image_width=frame.shape[1],
             image_height=frame.shape[0],
             latency_ms=latency,
@@ -171,7 +172,7 @@ def main() -> None:
         overlay_frame = None
         if args.save_video or args.show:
             overlay_frame = frame.copy()
-            draw_overlay(overlay_frame, decision)
+            draw_overlay(overlay_frame, decision, detected_boxes)
 
         if args.save_video and overlay_frame is not None:
             if writer is None:

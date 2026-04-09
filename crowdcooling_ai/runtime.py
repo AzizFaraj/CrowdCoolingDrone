@@ -75,7 +75,15 @@ def boxes_from_result(result) -> list[DetectedBox]:
     return boxes
 
 
-def draw_overlay(frame, decision_output) -> None:
+def draw_overlay(frame, decision_output, boxes: list[DetectedBox] | None = None) -> None:
+    for box in boxes or []:
+        top_left = (int(box.x1), int(box.y1))
+        bottom_right = (int(box.x2), int(box.y2))
+        cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
+        label = f"{box.confidence:.2f}"
+        label_origin = (top_left[0], max(top_left[1] - 8, 18))
+        cv2.putText(frame, label, label_origin, cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
+
     roi_u = int(decision_output.roi_u)
     roi_v = int(decision_output.roi_v)
     cv2.drawMarker(frame, (roi_u, roi_v), (0, 0, 255), cv2.MARKER_CROSS, 18, 2)
