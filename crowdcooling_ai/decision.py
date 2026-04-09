@@ -10,7 +10,7 @@ import numpy as np
 from .schemas import DecisionOutput, DetectedBox, LatencyBreakdown
 
 
-@dataclass(slots=True)
+@dataclass
 class DecisionConfig:
     camera_role: str = "bottom"
     grid_size: int = 16
@@ -25,7 +25,7 @@ class DecisionConfig:
     forward_confidence_threshold: float = 0.35
 
 
-@dataclass(slots=True)
+@dataclass
 class HotspotEstimate:
     roi_u: float
     roi_v: float

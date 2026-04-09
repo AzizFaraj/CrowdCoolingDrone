@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 
-@dataclass(slots=True)
+@dataclass
 class LatencyBreakdown:
     capture_ms: float = 0.0
     preprocess_ms: float = 0.0
@@ -17,7 +17,7 @@ class LatencyBreakdown:
         return asdict(self)
 
 
-@dataclass(slots=True)
+@dataclass
 class DetectedBox:
     x1: float
     y1: float
@@ -31,7 +31,7 @@ class DetectedBox:
         return ((self.x1 + self.x2) / 2.0, (self.y1 + self.y2) / 2.0)
 
 
-@dataclass(slots=True)
+@dataclass
 class DecisionOutput:
     timestamp_ms: int
     frame_id: str
