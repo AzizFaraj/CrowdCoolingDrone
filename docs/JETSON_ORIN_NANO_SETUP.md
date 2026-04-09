@@ -55,20 +55,30 @@ python3 -m pip install --no-cache-dir \
 
 ## 4. Install torchvision
 
-Try the matching torchvision version first:
+For JetPack `5.1.2` with NVIDIA's `torch-2.1.0a0+41361538.nv23.06`, a source build of `torchvision 0.16.1` is the safer path on Jetson. NVIDIA forum reports for this exact JetPack family show `0.16.1` resolving the Ultralytics `torchvision::nms` mismatch where `0.16.0` stayed problematic.
+
+Install build helpers first:
 
 ```bash
-python3 -m pip install --no-cache-dir --no-deps torchvision==0.16.0
+sudo apt-get install -y libpng-dev
+python3 -m pip install --no-cache-dir ninja
 ```
 
-If `import torchvision` fails after that, build it from the official source tag:
+Then build `torchvision` from source inside the activated venv:
 
 ```bash
-git clone --branch v0.16.0 --depth 1 https://github.com/pytorch/vision.git ~/vision
+python3 -m pip uninstall -y torchvision
+rm -rf ~/vision
+git clone --branch v0.16.1 --depth 1 https://github.com/pytorch/vision.git ~/vision
 cd ~/vision
-python3 -m pip install --no-cache-dir --no-deps .
+export BUILD_VERSION=0.16.1
+export FORCE_CUDA=1
+export TORCH_CUDA_ARCH_LIST="8.7"
+python3 setup.py install
 cd ~
 ```
+
+Do not run your project from inside `~/vision`. After installation, go back to the repo folder before testing inference.
 
 ## 5. Install this project's Python packages
 
@@ -147,3 +157,5 @@ Use that only for profiling and demo runs where you want maximum performance.
   https://docs.nvidia.com/deeplearning/frameworks/install-pytorch-jetson-platform-release-notes/pytorch-jetson-rel.html
 - PyTorch previous versions:
   https://pytorch.org/get-started/previous-versions/
+- NVIDIA forum thread confirming `torchvision 0.16.1` fixed this JetPack 5.1.2 issue:
+  https://forums.developer.nvidia.com/t/issues-finding-compatible-torchvision-with-jetpack-5-1-2/311027
