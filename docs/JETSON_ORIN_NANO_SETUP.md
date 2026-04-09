@@ -89,6 +89,30 @@ cd ~/Senior\ Project\ II
 python3 -m pip install --no-cache-dir -r requirements-jetson.txt
 ```
 
+After that, remove any pip OpenCV wheels so the venv falls back to JetPack's system OpenCV build with GStreamer support:
+
+```bash
+python3 -m pip uninstall -y \
+  opencv-python \
+  opencv-python-headless \
+  opencv-contrib-python \
+  opencv-contrib-python-headless
+```
+
+Then verify that `cv2` comes from the system package and still has GStreamer enabled:
+
+```bash
+python3 - <<'PY'
+import cv2
+print("cv2:", cv2.__version__)
+for line in cv2.getBuildInformation().splitlines():
+    if "GStreamer" in line:
+        print(line)
+PY
+```
+
+On Jetson, you want the imported `cv2` to be the JetPack build, not a pip wheel, because CSI camera pipelines through `nvarguscamerasrc` depend on OpenCV being compiled with GStreamer support.
+
 ## 6. Verify the core stack
 
 ```bash
