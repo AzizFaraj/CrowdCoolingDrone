@@ -1,0 +1,5 @@
+train: C:\Users\PC\Desktop\Term252\Senior Project II\datasets\processed\mdc_head_yolo\lists\train.txt
+val: C:\Users\PC\Desktop\Term252\Senior Project II\datasets\processed\mdc_head_yolo\lists\val.txt
+test: C:\Users\PC\Desktop\Term252\Senior Project II\datasets\processed\mdc_head_yolo\lists\test.txt
+names:
+  0: head

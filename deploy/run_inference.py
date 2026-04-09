@@ -1,0 +1,190 @@
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+import time
+from pathlib import Path
+from typing import Iterator
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+import cv2
+from ultralytics import YOLO
+
+from crowdcooling_ai.decision import DecisionConfig, TemporalDecisionEngine
+from crowdcooling_ai.metrics import summarize_latency
+from crowdcooling_ai.runtime import DEVICE_PROFILES, boxes_from_result, draw_overlay, frame_iter, resolve_profile_imgsz
+from crowdcooling_ai.schemas import DetectedBox, LatencyBreakdown
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run Jetson-ready inference for the crowd-cooling drone.")
+    parser.add_argument("--model", type=Path, required=True)
+    parser.add_argument("--source", required=True, help="Image directory, video file, camera index, or GStreamer pipeline.")
+    parser.add_argument("--backend", choices=("pytorch", "onnx", "tensorrt"), default="pytorch")
+    parser.add_argument("--profile", choices=tuple(DEVICE_PROFILES), default="orin_nano")
+    parser.add_argument("--camera-role", choices=("bottom", "side"), default="bottom")
+    parser.add_argument("--imgsz", type=int)
+    parser.add_argument("--conf", type=float, default=0.10)
+    parser.add_argument("--iou", type=float, default=0.70)
+    parser.add_argument("--device", default="0")
+    parser.add_argument("--max-frames", type=int)
+    parser.add_argument("--warmup-frames", type=int, default=20)
+    parser.add_argument("--output-dir", type=Path, default=Path("deploy/runs/default"))
+    parser.add_argument("--save-video", action="store_true")
+    parser.add_argument("--altitude-m", type=float)
+    parser.add_argument("--fx", type=float)
+    parser.add_argument("--fy", type=float)
+    parser.add_argument("--cx", type=float)
+    parser.add_argument("--cy", type=float)
+    parser.add_argument("--forward-block-count-threshold", type=int, default=10)
+    parser.add_argument("--forward-density-threshold", type=float, default=0.12)
+    parser.add_argument("--forward-confidence-threshold", type=float, default=0.35)
+    args = parser.parse_args()
+
+    imgsz = resolve_profile_imgsz(args.profile, args.imgsz)
+
+    suffix_to_backend = {".pt": "pytorch", ".onnx": "onnx", ".engine": "tensorrt"}
+    expected_backend = suffix_to_backend.get(args.model.suffix.lower())
+    if expected_backend and expected_backend != args.backend:
+        raise ValueError(f"Model suffix {args.model.suffix} does not match requested backend '{args.backend}'.")
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    model = YOLO(str(args.model))
+    decision_engine = TemporalDecisionEngine(
+        DecisionConfig(
+            camera_role=args.camera_role,
+            forward_block_count_threshold=args.forward_block_count_threshold,
+            forward_density_threshold=args.forward_density_threshold,
+            forward_confidence_threshold=args.forward_confidence_threshold,
+        )
+    )
+
+    writer = None
+    csv_path = args.output_dir / "decision_log.csv"
+    jsonl_path = args.output_dir / "decision_log.jsonl"
+    csv_handle = csv_path.open("w", newline="", encoding="utf-8")
+    jsonl_handle = jsonl_path.open("w", encoding="utf-8")
+    csv_writer = csv.DictWriter(
+        csv_handle,
+        fieldnames=[
+            "frame_id",
+            "timestamp_ms",
+            "camera_role",
+            "roi_u",
+            "roi_v",
+            "roi_confidence",
+            "count_estimate",
+            "density_score",
+            "mist_flag",
+            "proceed_flag",
+            "decision_reason",
+            "dx_m",
+            "dy_m",
+            "smoothed_count",
+            "stable_hits",
+            "capture_ms",
+            "preprocess_ms",
+            "inference_ms",
+            "postprocess_ms",
+            "decision_ms",
+            "total_ms",
+        ],
+    )
+    csv_writer.writeheader()
+
+    latency_records = {key: [] for key in ("capture_ms", "preprocess_ms", "inference_ms", "postprocess_ms", "decision_ms", "total_ms")}
+
+    for frame_index, (frame_id, frame, capture_ms) in enumerate(frame_iter(args.source)):
+        if args.max_frames is not None and frame_index >= args.max_frames:
+            break
+
+        infer_start = time.perf_counter()
+        result = model.predict(frame, conf=args.conf, iou=args.iou, imgsz=imgsz, device=args.device, verbose=False)[0]
+        wall_ms = (time.perf_counter() - infer_start) * 1000.0
+        speed = getattr(result, "speed", {}) or {}
+        latency = LatencyBreakdown(
+            capture_ms=capture_ms,
+            preprocess_ms=float(speed.get("preprocess", 0.0)),
+            inference_ms=float(speed.get("inference", wall_ms)),
+            postprocess_ms=float(speed.get("postprocess", 0.0)),
+            total_ms=wall_ms + capture_ms,
+        )
+        decision = decision_engine.update(
+            frame_id=frame_id,
+            timestamp_ms=int(time.time() * 1000),
+            boxes=boxes_from_result(result),
+            image_width=frame.shape[1],
+            image_height=frame.shape[0],
+            latency_ms=latency,
+            altitude_m=args.altitude_m,
+            fx=args.fx,
+            fy=args.fy,
+            cx=args.cx,
+            cy=args.cy,
+        )
+        decision.latency_ms.total_ms = max(
+            latency.capture_ms + latency.preprocess_ms + latency.inference_ms + latency.postprocess_ms + latency.decision_ms,
+            latency.total_ms + latency.decision_ms,
+        )
+
+        if frame_index >= args.warmup_frames:
+            payload = decision.to_dict()
+            csv_writer.writerow(
+                {
+                    "frame_id": payload["frame_id"],
+                    "timestamp_ms": payload["timestamp_ms"],
+                    "camera_role": payload["camera_role"],
+                    "roi_u": payload["roi_u"],
+                    "roi_v": payload["roi_v"],
+                    "roi_confidence": payload["roi_confidence"],
+                    "count_estimate": payload["count_estimate"],
+                    "density_score": payload["density_score"],
+                    "mist_flag": payload["mist_flag"],
+                    "proceed_flag": payload["proceed_flag"],
+                    "decision_reason": payload["decision_reason"],
+                    "dx_m": payload["dx_m"],
+                    "dy_m": payload["dy_m"],
+                    "smoothed_count": payload["smoothed_count"],
+                    "stable_hits": payload["stable_hits"],
+                    "capture_ms": payload["latency_ms"]["capture_ms"],
+                    "preprocess_ms": payload["latency_ms"]["preprocess_ms"],
+                    "inference_ms": payload["latency_ms"]["inference_ms"],
+                    "postprocess_ms": payload["latency_ms"]["postprocess_ms"],
+                    "decision_ms": payload["latency_ms"]["decision_ms"],
+                    "total_ms": payload["latency_ms"]["total_ms"],
+                }
+            )
+            jsonl_handle.write(json.dumps(payload) + "\n")
+            for key in latency_records:
+                latency_records[key].append(payload["latency_ms"][key])
+
+        if args.save_video:
+            if writer is None:
+                video_path = args.output_dir / "overlay.mp4"
+                writer = cv2.VideoWriter(
+                    str(video_path),
+                    cv2.VideoWriter_fourcc(*"mp4v"),
+                    20.0,
+                    (frame.shape[1], frame.shape[0]),
+                )
+            overlay_frame = frame.copy()
+            draw_overlay(overlay_frame, decision)
+            writer.write(overlay_frame)
+
+    csv_handle.close()
+    jsonl_handle.close()
+    if writer is not None:
+        writer.release()
+
+    summary = {key: summarize_latency(values) for key, values in latency_records.items()}
+    (args.output_dir / "latency_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+
+
+if __name__ == "__main__":
+    main()

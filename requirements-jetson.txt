@@ -1,0 +1,9 @@
+ultralytics==8.4.14
+pandas>=1.5,<2.1
+matplotlib>=3.6,<3.8
+Pillow>=9.0
+PyYAML>=6.0
+jupyter>=1.0
+ipykernel>=6.0
+onnx>=1.14
+seaborn>=0.12

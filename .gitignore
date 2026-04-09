@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual env / local runtime
+.venv/
+.jupyter/
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.lnk
+
+# Local reports / course collateral
+*.pdf
+*.pptx
+FDR/
+
+# Legacy exploratory notebooks kept local
+LOAF.ipynb
+YoloV8.ipynb
+
+# Large raw datasets and archives
+MovingDroneCrowd/
+LOAF/
+Zipped files/
+cutted temp/
+datasets/raw/
+*.zip
+*.tar
+*.7z
+*.rar
+
+# Generated datasets and caches
+datasets/processed/top_down_people_v1i_person_yolo26/
+*.cache
+
+# Training / evaluation / deployment outputs
+train/runs/
+train/threshold_sweeps/smoke/
+eval/runs/
+deploy/runs/
+docs/figures/
+
+# Model weights and exports
+*.pt
+*.pth
+*.onnx
+*.engine
+*.torchscript
+
+# Notebook and plot artifacts
+*.png
+*.jpg
+*.jpeg
+
+# Keep docs and source-controlled notebooks by default
+!docs/
+!docs/RESULTS.md
+!notebooks/
+!notebooks/*.ipynb

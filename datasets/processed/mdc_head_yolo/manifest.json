@@ -1,0 +1,14 @@
+{
+  "name": "MovingDroneCrowd head YOLO",
+  "raw_root": "C:\\Users\\PC\\Desktop\\Term252\\Senior Project II\\MovingDroneCrowd",
+  "processed_root": "C:\\Users\\PC\\Desktop\\Term252\\Senior Project II\\datasets\\processed\\mdc_head_yolo",
+  "annotation_format": "csv_yolo",
+  "label_semantics": "head",
+  "split_policy": "scene_or_video",
+  "splits": {
+    "train": 3499,
+    "val": 572,
+    "test": 869
+  },
+  "data_yaml": "C:\\Users\\PC\\Desktop\\Term252\\Senior Project II\\datasets\\processed\\mdc_head_yolo\\mdc_head_yolo.yaml"
+}
