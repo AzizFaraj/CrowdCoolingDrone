@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 
 import Sidebar from "@/components/layout/Sidebar";
 import TopBanner from "@/components/layout/TopBanner";
+import MockDataProvider from "@/components/providers/MockDataProvider";
 
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} dark`}>
       <body className="flex h-screen overflow-hidden bg-zinc-950 font-sans text-zinc-200 antialiased">
+        <MockDataProvider />
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBanner />
