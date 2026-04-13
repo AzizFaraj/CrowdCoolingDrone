@@ -67,3 +67,9 @@ docs/figures/
 !docs/RESULTS.md
 !notebooks/
 !notebooks/*.ipynb
+
+# Dashboard (Next.js)
+node_modules/
+dashboard/.next/
+dashboard/out/
+dashboard/.env.local
