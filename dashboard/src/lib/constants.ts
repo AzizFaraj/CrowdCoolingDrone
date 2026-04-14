@@ -32,6 +32,38 @@ export const SPEC = {
   altitudeMaxM: 15,
 } as const;
 
+/* ── WebRTC ──────────────────────────────────────────────────────────── */
+
+/**
+ * ICE server configuration.
+ * A public STUN server is sufficient for most 4G NAT scenarios.
+ * Add a TURN entry if symmetric NAT is encountered in the field.
+ */
+export const ICE_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  // { urls: "turn:turn.example.com:3478", username: "…", credential: "…" },
+];
+
+/**
+ * RTCPeerConnection configuration tuned for low-latency, receive-only
+ * video over a cellular backhaul.
+ */
+export const RTC_CONFIG: RTCConfiguration = {
+  iceServers: ICE_SERVERS,
+  iceTransportPolicy: "all",
+  bundlePolicy: "max-bundle",
+};
+
+/**
+ * Preferred H.264 profile for receive.
+ * Constrained Baseline (42e0) is universally supported and yields
+ * the lowest encode/decode latency on NVENC + browser HW decoders.
+ */
+export const PREFERRED_H264_PROFILE = "42e01f";
+
+/** How often (ms) to sample RTCPeerConnection stats for the UI. */
+export const WEBRTC_STATS_INTERVAL_MS = 2_000;
+
 /** Navigation items for the sidebar */
 export const NAV_ITEMS = [
   { label: "Operations",  href: "/operations",  icon: "Monitor"      },
