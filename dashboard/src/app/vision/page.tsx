@@ -6,9 +6,12 @@ import MetricCard from "@/components/common/MetricCard";
 import StatusBadge from "@/components/common/StatusBadge";
 import PageShell from "@/components/layout/PageShell";
 import CameraSelector from "@/components/vision/CameraSelector";
+import LiveKitVideoFeed from "@/components/vision/LiveKitVideoFeed";
 import StreamStats from "@/components/vision/StreamStats";
 import VideoFeed from "@/components/vision/VideoFeed";
+import { useLiveKitStream } from "@/hooks/useLiveKitStream";
 import { useWebRTCStream } from "@/hooks/useWebRTCStream";
+import { VIDEO_TRANSPORT } from "@/lib/constants";
 import { useDroneStore } from "@/stores/droneStore";
 import type { CameraId } from "@/types/webrtc";
 
@@ -28,7 +31,13 @@ const STATE_VARIANT: Record<string, "green" | "yellow" | "red" | "neutral"> = {
 
 export default function VisionPage() {
   const snapshot = useDroneStore((s) => s.snapshot);
-  const { state, stream, stats, start, stop } = useWebRTCStream();
+  const webrtc = useWebRTCStream();
+  const livekit = useLiveKitStream();
+  const transport = VIDEO_TRANSPORT;
+  const state = transport === "livekit" ? livekit.state : webrtc.state;
+  const stats = transport === "livekit" ? livekit.stats : webrtc.stats;
+  const start = transport === "livekit" ? livekit.start : webrtc.start;
+  const stop = transport === "livekit" ? livekit.stop : webrtc.stop;
   const [activeCamera, setActiveCamera] = useState<CameraId>("top-down");
 
   /* ── camera switching ─────────────────────────────────────────────── */
@@ -97,11 +106,27 @@ export default function VisionPage() {
           </div>
         </div>
 
-        <VideoFeed
-          stream={stream}
-          label={activeCamera === "top-down" ? "Top-Down (IMX477)" : "Side-View (IMX477)"}
-          className="min-h-[360px]"
-        />
+        {transport === "livekit" ? (
+          <LiveKitVideoFeed
+            track={livekit.track}
+            label={
+              activeCamera === "top-down"
+                ? "Top-Down (IMX477) via LiveKit"
+                : "Side-View (IMX477) via LiveKit"
+            }
+            className="min-h-[360px]"
+          />
+        ) : (
+          <VideoFeed
+            stream={webrtc.stream}
+            label={
+              activeCamera === "top-down"
+                ? "Top-Down (IMX477)"
+                : "Side-View (IMX477)"
+            }
+            className="min-h-[360px]"
+          />
+        )}
       </section>
 
       {/* ── Stream health metrics ──────────────────────────────────── */}

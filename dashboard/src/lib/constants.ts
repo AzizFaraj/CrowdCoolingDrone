@@ -6,6 +6,22 @@
 export const WS_URL =
   process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8080";
 
+/** Which video transport to use on the Vision page. */
+export const VIDEO_TRANSPORT =
+  process.env.NEXT_PUBLIC_VIDEO_TRANSPORT ?? "webrtc";
+
+/** LiveKit server URL for room-based video transport. */
+export const LIVEKIT_URL =
+  process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "";
+
+/** Default LiveKit room used by the dashboard video page. */
+export const LIVEKIT_ROOM =
+  process.env.NEXT_PUBLIC_LIVEKIT_ROOM ?? "drone-1";
+
+/** Dashboard route that mints a viewer token for LiveKit. */
+export const LIVEKIT_TOKEN_ENDPOINT =
+  process.env.NEXT_PUBLIC_LIVEKIT_TOKEN_ENDPOINT ?? "/api/livekit/token";
+
 /** REST API base URL */
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api";

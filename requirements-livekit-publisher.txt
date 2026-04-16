@@ -1,0 +1,4 @@
+# Separate environment for LiveKit camera publishing.
+# The LiveKit Python SDK currently requires Python >= 3.9, so do not
+# install these into the Jetson AI venv that is pinned to Python 3.8.
+livekit>=1.0,<2.0
