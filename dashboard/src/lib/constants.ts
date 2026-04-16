@@ -22,6 +22,26 @@ export const LIVEKIT_ROOM =
 export const LIVEKIT_TOKEN_ENDPOINT =
   process.env.NEXT_PUBLIC_LIVEKIT_TOKEN_ENDPOINT ?? "/api/livekit/token";
 
+/** MediaMTX browser player base URL, typically http://host:8889 for WebRTC. */
+export const MEDIAMTX_WEBRTC_BASE_URL =
+  process.env.NEXT_PUBLIC_MEDIAMTX_WEBRTC_BASE_URL ?? "";
+
+/** MediaMTX browser player base URL for HLS, typically http://host:8888. */
+export const MEDIAMTX_HLS_BASE_URL =
+  process.env.NEXT_PUBLIC_MEDIAMTX_HLS_BASE_URL ?? "";
+
+/** Whether the dashboard embeds MediaMTX via WebRTC or HLS. */
+export const MEDIAMTX_EMBED_PROTOCOL =
+  process.env.NEXT_PUBLIC_MEDIAMTX_EMBED_PROTOCOL ?? "webrtc";
+
+/** MediaMTX path that receives the top-down annotated video stream. */
+export const MEDIAMTX_TOP_PATH =
+  process.env.NEXT_PUBLIC_MEDIAMTX_TOP_PATH ?? "drone-top";
+
+/** MediaMTX path that receives the side-view annotated video stream. */
+export const MEDIAMTX_SIDE_PATH =
+  process.env.NEXT_PUBLIC_MEDIAMTX_SIDE_PATH ?? "drone-side";
+
 /** REST API base URL */
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api";

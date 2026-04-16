@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import MetricCard from "@/components/common/MetricCard";
+import MediaMTXVideoFeed from "@/components/vision/MediaMTXVideoFeed";
 import StatusBadge from "@/components/common/StatusBadge";
 import PageShell from "@/components/layout/PageShell";
 import CameraSelector from "@/components/vision/CameraSelector";
@@ -34,31 +35,46 @@ export default function VisionPage() {
   const webrtc = useWebRTCStream();
   const livekit = useLiveKitStream();
   const transport = VIDEO_TRANSPORT;
-  const state = transport === "livekit" ? livekit.state : webrtc.state;
+  const [activeCamera, setActiveCamera] = useState<CameraId>("top-down");
+  const [mediaMtxActive, setMediaMtxActive] = useState(false);
+  const state =
+    transport === "livekit"
+      ? livekit.state
+      : transport === "mediamtx"
+        ? mediaMtxActive
+          ? "connected"
+          : "idle"
+        : webrtc.state;
   const stats = transport === "livekit" ? livekit.stats : webrtc.stats;
   const start = transport === "livekit" ? livekit.start : webrtc.start;
   const stop = transport === "livekit" ? livekit.stop : webrtc.stop;
-  const [activeCamera, setActiveCamera] = useState<CameraId>("top-down");
 
   /* ── camera switching ─────────────────────────────────────────────── */
   const handleCameraChange = useCallback(
     (camera: CameraId) => {
       setActiveCamera(camera);
+      if (transport === "mediamtx") {
+        return;
+      }
       if (state === "connected" || state === "signaling" || state === "connecting") {
         stop();
         start(camera);
       }
     },
-    [state, start, stop],
+    [state, start, stop, transport],
   );
 
   const handleToggleStream = useCallback(() => {
+    if (transport === "mediamtx") {
+      setMediaMtxActive((current) => !current);
+      return;
+    }
     if (state === "idle" || state === "closed" || state === "failed") {
       start(activeCamera);
     } else {
       stop();
     }
-  }, [state, activeCamera, start, stop]);
+  }, [state, activeCamera, start, stop, transport]);
 
   const isStreaming = state === "connected";
 
@@ -106,7 +122,18 @@ export default function VisionPage() {
           </div>
         </div>
 
-        {transport === "livekit" ? (
+        {transport === "mediamtx" ? (
+          <MediaMTXVideoFeed
+            camera={activeCamera}
+            active={mediaMtxActive}
+            label={
+              activeCamera === "top-down"
+                ? "Top-Down (IMX477) via MediaMTX"
+                : "Side-View (IMX477) via MediaMTX"
+            }
+            className="min-h-[360px]"
+          />
+        ) : transport === "livekit" ? (
           <LiveKitVideoFeed
             track={livekit.track}
             label={
@@ -130,7 +157,7 @@ export default function VisionPage() {
       </section>
 
       {/* ── Stream health metrics ──────────────────────────────────── */}
-      {isStreaming && (
+      {isStreaming && transport !== "mediamtx" && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium uppercase tracking-wider text-zinc-500">
             Stream Health

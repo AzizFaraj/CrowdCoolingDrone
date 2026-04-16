@@ -16,6 +16,51 @@ DEVICE_PROFILES = {
 }
 
 
+def build_mediamtx_stream_pipeline(
+    *,
+    url: str,
+    protocol: str,
+    fps: float,
+    width: int,
+    height: int,
+    encoder: str = "x264enc",
+    bitrate_kbps: int = 2500,
+) -> str:
+    if protocol not in {"rtsp", "rtmp"}:
+        raise ValueError(f"Unsupported stream protocol '{protocol}'.")
+
+    base = (
+        "appsrc is-live=true block=true format=time "
+        f"caps=video/x-raw,format=BGR,width={width},height={height},framerate={max(int(round(fps)), 1)}/1 ! "
+        "videoconvert ! "
+        "video/x-raw,format=I420 ! "
+    )
+
+    if encoder == "x264enc":
+        encode = (
+            f"x264enc tune=zerolatency speed-preset=ultrafast bitrate={bitrate_kbps} "
+            "key-int-max=30 bframes=0 byte-stream=true ! "
+            "h264parse config-interval=1 ! "
+        )
+    elif encoder == "nvv4l2h264enc":
+        encode = (
+            "nvvidconv ! "
+            f"nvv4l2h264enc insert-sps-pps=true iframeinterval=30 idrinterval=30 bitrate={bitrate_kbps * 1000} ! "
+            "h264parse config-interval=1 ! "
+        )
+    else:
+        raise ValueError(
+            f"Unsupported stream encoder '{encoder}'. Use 'x264enc', 'nvv4l2h264enc', or --stream-pipeline."
+        )
+
+    if protocol == "rtsp":
+        sink = f"rtspclientsink location={url} protocols=tcp"
+    else:
+        sink = f"flvmux streamable=true ! rtmpsink location={url}"
+
+    return base + encode + sink
+
+
 def resolve_profile_imgsz(profile_name: str, requested_imgsz: int | None) -> int:
     profile = DEVICE_PROFILES[profile_name]
     imgsz = requested_imgsz or profile["default_imgsz"]

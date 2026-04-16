@@ -6,7 +6,6 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Iterator
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -17,8 +16,15 @@ from ultralytics import YOLO
 
 from crowdcooling_ai.decision import DecisionConfig, TemporalDecisionEngine
 from crowdcooling_ai.metrics import summarize_latency
-from crowdcooling_ai.runtime import DEVICE_PROFILES, boxes_from_result, draw_overlay, frame_iter, resolve_profile_imgsz
-from crowdcooling_ai.schemas import DetectedBox, LatencyBreakdown
+from crowdcooling_ai.runtime import (
+    DEVICE_PROFILES,
+    boxes_from_result,
+    build_mediamtx_stream_pipeline,
+    draw_overlay,
+    frame_iter,
+    resolve_profile_imgsz,
+)
+from crowdcooling_ai.schemas import LatencyBreakdown
 
 
 def main() -> None:
@@ -37,6 +43,26 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, default=Path("deploy/runs/default"))
     parser.add_argument("--save-video", action="store_true")
     parser.add_argument("--show", action="store_true", help="Display live overlay in an OpenCV window.")
+    parser.add_argument("--stream-url", help="Publish the annotated overlay to a MediaMTX path such as rtsp://host:8554/drone-top.")
+    parser.add_argument(
+        "--stream-protocol",
+        choices=("rtsp", "rtmp"),
+        default="rtsp",
+        help="Protocol used for the annotated output stream.",
+    )
+    parser.add_argument(
+        "--stream-encoder",
+        default="x264enc",
+        help="GStreamer encoder for annotated streaming. Recommended: x264enc. Optional: nvv4l2h264enc.",
+    )
+    parser.add_argument("--stream-bitrate-kbps", type=int, default=2500)
+    parser.add_argument("--stream-fps", type=float, default=15.0)
+    parser.add_argument("--stream-width", type=int)
+    parser.add_argument("--stream-height", type=int)
+    parser.add_argument(
+        "--stream-pipeline",
+        help="Custom GStreamer VideoWriter pipeline for annotated streaming. Overrides the built-in MediaMTX pipeline builder.",
+    )
     parser.add_argument("--altitude-m", type=float)
     parser.add_argument("--fx", type=float)
     parser.add_argument("--fy", type=float)
@@ -53,6 +79,8 @@ def main() -> None:
     expected_backend = suffix_to_backend.get(args.model.suffix.lower())
     if expected_backend and expected_backend != args.backend:
         raise ValueError(f"Model suffix {args.model.suffix} does not match requested backend '{args.backend}'.")
+    if bool(args.stream_width) ^ bool(args.stream_height):
+        raise ValueError("--stream-width and --stream-height must be provided together.")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     model = YOLO(str(args.model))
@@ -66,6 +94,7 @@ def main() -> None:
     )
 
     writer = None
+    stream_writer = None
     csv_path = args.output_dir / "decision_log.csv"
     jsonl_path = args.output_dir / "decision_log.jsonl"
     csv_handle = csv_path.open("w", newline="", encoding="utf-8")
@@ -170,7 +199,7 @@ def main() -> None:
                 latency_records[key].append(payload["latency_ms"][key])
 
         overlay_frame = None
-        if args.save_video or args.show:
+        if args.save_video or args.show or args.stream_url or args.stream_pipeline:
             overlay_frame = frame.copy()
             draw_overlay(overlay_frame, decision, detected_boxes)
 
@@ -185,6 +214,43 @@ def main() -> None:
                 )
             writer.write(overlay_frame)
 
+        if (args.stream_url or args.stream_pipeline) and overlay_frame is not None:
+            stream_frame = overlay_frame
+            if args.stream_width and args.stream_height:
+                stream_frame = cv2.resize(
+                    stream_frame,
+                    (args.stream_width, args.stream_height),
+                    interpolation=cv2.INTER_AREA,
+                )
+
+            if stream_writer is None:
+                stream_size = (stream_frame.shape[1], stream_frame.shape[0])
+                stream_pipeline = args.stream_pipeline or build_mediamtx_stream_pipeline(
+                    url=args.stream_url,
+                    protocol=args.stream_protocol,
+                    fps=args.stream_fps,
+                    width=stream_size[0],
+                    height=stream_size[1],
+                    encoder=args.stream_encoder,
+                    bitrate_kbps=args.stream_bitrate_kbps,
+                )
+                stream_writer = cv2.VideoWriter(
+                    stream_pipeline,
+                    cv2.CAP_GSTREAMER,
+                    0,
+                    args.stream_fps,
+                    stream_size,
+                    True,
+                )
+                if not stream_writer.isOpened():
+                    raise RuntimeError(
+                        "Failed to open the annotated stream writer. "
+                        "Check that OpenCV has GStreamer support and that the encoder/plugin is available. "
+                        f"Pipeline: {stream_pipeline}"
+                    )
+
+            stream_writer.write(stream_frame)
+
         if args.show and overlay_frame is not None:
             cv2.imshow(f"CrowdCooling - {args.camera_role}", overlay_frame)
             key = cv2.waitKey(1) & 0xFF
@@ -195,6 +261,8 @@ def main() -> None:
     jsonl_handle.close()
     if writer is not None:
         writer.release()
+    if stream_writer is not None:
+        stream_writer.release()
     if args.show:
         cv2.destroyAllWindows()
 
