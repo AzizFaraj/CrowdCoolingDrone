@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-CrowdCooling — Jetson WebRTC Signaling Bridge.
+CrowdCooling -- Jetson WebRTC Signaling Bridge.
 
 Connects to the signaling relay (or runs on the Jetson's local WS in
 direct mode), listens for ``webrtc:request-stream`` from the dashboard,
 and publishes a live H.264 camera feed via WebRTC using aiortc.
 
-Usage (relay mode — cross-network):
+Usage (relay mode -- cross-network):
     python deploy/webrtc_bridge.py \
         --relay-url wss://relay.your-domain.com/ws \
         --drone-id drone-01
 
-Usage (direct mode — same LAN, Jetson runs its own WS):
+Usage (direct mode -- same LAN, Jetson runs its own WS):
     python deploy/webrtc_bridge.py --direct --port 8080
 
 Environment variables (override CLI args):
@@ -240,7 +241,7 @@ async def run_relay(relay_url: str, drone_id: str, auth_token: str) -> None:
                     msg_type = msg.get("type", "")
 
                     if msg_type == "registered":
-                        log.info("✅  Registered as jetson for %s", msg.get("droneId"))
+                        log.info("[OK] Registered as jetson for %s", msg.get("droneId"))
                         continue
 
                     if msg_type == "relay:error":
@@ -249,7 +250,7 @@ async def run_relay(relay_url: str, drone_id: str, auth_token: str) -> None:
 
                     if msg_type == "webrtc:request-stream":
                         camera = msg.get("camera", "top-down")
-                        log.info("📹  Stream requested: %s", camera)
+                        log.info("[STREAM] Stream requested: %s", camera)
                         await create_offer_for_camera(camera, send_fn)
 
                     elif msg_type == "webrtc:answer":
@@ -262,7 +263,7 @@ async def run_relay(relay_url: str, drone_id: str, auth_token: str) -> None:
                         await stop_camera(msg["camera"])
 
         except Exception as exc:
-            log.warning("Relay connection lost: %s — reconnecting in 3s", exc)
+            log.warning("Relay connection lost: %s -- reconnecting in 3s", exc)
             await cleanup_all()
             await asyncio.sleep(3)
 
@@ -293,7 +294,7 @@ async def run_direct(host: str, port: int) -> None:
 
                 if msg_type == "webrtc:request-stream":
                     camera = msg.get("camera", "top-down")
-                    log.info("📹  Stream requested: %s", camera)
+                    log.info("[STREAM] Stream requested: %s", camera)
                     await create_offer_for_camera(camera, send_fn)
 
                 elif msg_type == "webrtc:answer":
@@ -310,7 +311,7 @@ async def run_direct(host: str, port: int) -> None:
         finally:
             await cleanup_all()
 
-    log.info("Direct mode — listening on ws://%s:%d", host, port)
+    log.info("Direct mode -- listening on ws://%s:%d", host, port)
     async with websockets.serve(handler, host, port):
         await asyncio.Future()  # run forever
 
