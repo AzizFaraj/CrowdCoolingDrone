@@ -1,7 +1,1 @@
-{
-  "/operations/page": "app/operations/page.js",
-  "/vision/page": "app/vision/page.js",
-  "/payload/page": "app/payload/page.js",
-  "/docking/page": "app/docking/page.js",
-  "/analytics/page": "app/analytics/page.js"
-}
+{}
