@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="60" y1="40" x2="452" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#18324A"/>
+      <stop offset="1" stop-color="#0A1524"/>
+    </linearGradient>
+    <radialGradient id="innerGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(256 240) rotate(90) scale(210)">
+      <stop offset="0" stop-color="#173E56"/>
+      <stop offset="0.7" stop-color="#102132"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </radialGradient>
+    <linearGradient id="tealGrad" x1="130" y1="90" x2="382" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#83FFF2"/>
+      <stop offset="0.5" stop-color="#26D9D9"/>
+      <stop offset="1" stop-color="#0AA7C2"/>
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="178" y1="150" x2="334" y2="248" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A5D7F2"/>
+      <stop offset="0.5" stop-color="#5C89AF"/>
+      <stop offset="1" stop-color="#294867"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="156" y1="228" x2="356" y2="388" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#84FFF4"/>
+      <stop offset="1" stop-color="#0BB7D1"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#04101B" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="88" fill="#09111C"/>
+  <rect x="22" y="22" width="468" height="468" rx="76" fill="url(#bgGrad)"/>
+  <rect x="30" y="30" width="452" height="452" rx="68" fill="url(#innerGlow)" stroke="#7AA8C7" stroke-opacity="0.45" stroke-width="2"/>
+
+  <g filter="url(#softGlow)" stroke="url(#tealGrad)" stroke-linecap="round" opacity="0.95">
+    <path d="M171 113C205 82 307 82 341 113" stroke-width="20"/>
+    <path d="M196 154C220 131 292 131 316 154" stroke-width="18"/>
+    <path d="M221 194C237 179 275 179 291 194" stroke-width="16"/>
+  </g>
+
+  <circle cx="256" cy="300" r="120" stroke="url(#ringGrad)" stroke-width="10" opacity="0.95" filter="url(#softGlow)"/>
+  <path d="M149 342C172 326 192 318 225 309" stroke="url(#tealGrad)" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+  <path d="M287 309C320 318 340 326 363 342" stroke="url(#tealGrad)" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+  <path d="M175 380C209 370 229 366 256 366C283 366 303 370 337 380" stroke="url(#tealGrad)" stroke-width="11" stroke-linecap="round" opacity="0.72"/>
+
+  <g filter="url(#shadow)">
+    <rect x="201" y="160" width="110" height="38" rx="16" fill="url(#steelGrad)" stroke="#8ADFF0" stroke-opacity="0.55" stroke-width="2"/>
+    <rect x="228" y="147" width="56" height="18" rx="9" fill="#B8EEFF" fill-opacity="0.78"/>
+    <circle cx="230" cy="179" r="4.5" fill="#33E4EE"/>
+    <circle cx="282" cy="179" r="4.5" fill="#33E4EE"/>
+
+    <path d="M201 179L149 201" stroke="#709DC0" stroke-width="10" stroke-linecap="round"/>
+    <path d="M311 179L363 201" stroke="#709DC0" stroke-width="10" stroke-linecap="round"/>
+    <path d="M214 194L173 232" stroke="#527AA0" stroke-width="9" stroke-linecap="round"/>
+    <path d="M298 194L339 232" stroke="#527AA0" stroke-width="9" stroke-linecap="round"/>
+
+    <g>
+      <circle cx="144" cy="203" r="13" fill="url(#steelGrad)" stroke="#9AE9F6" stroke-opacity="0.55" stroke-width="2"/>
+      <circle cx="368" cy="203" r="13" fill="url(#steelGrad)" stroke="#9AE9F6" stroke-opacity="0.55" stroke-width="2"/>
+      <circle cx="168" cy="236" r="12" fill="url(#steelGrad)" stroke="#9AE9F6" stroke-opacity="0.45" stroke-width="2"/>
+      <circle cx="344" cy="236" r="12" fill="url(#steelGrad)" stroke="#9AE9F6" stroke-opacity="0.45" stroke-width="2"/>
+      <ellipse cx="144" cy="191" rx="36" ry="10" fill="#B7F4FF" fill-opacity="0.18" stroke="#ACF8FF" stroke-opacity="0.45" stroke-width="2"/>
+      <ellipse cx="368" cy="191" rx="36" ry="10" fill="#B7F4FF" fill-opacity="0.18" stroke="#ACF8FF" stroke-opacity="0.45" stroke-width="2"/>
+      <ellipse cx="168" cy="224" rx="34" ry="9.5" fill="#B7F4FF" fill-opacity="0.14" stroke="#ACF8FF" stroke-opacity="0.35" stroke-width="2"/>
+      <ellipse cx="344" cy="224" rx="34" ry="9.5" fill="#B7F4FF" fill-opacity="0.14" stroke="#ACF8FF" stroke-opacity="0.35" stroke-width="2"/>
+    </g>
+
+    <rect x="236" y="193" width="40" height="28" rx="8" fill="#203B56" stroke="#8DEBFB" stroke-opacity="0.5" stroke-width="2"/>
+    <circle cx="256" cy="207" r="12" fill="#08121C" stroke="#6CDFF5" stroke-width="2.5"/>
+    <circle cx="256" cy="207" r="6" fill="url(#tealGrad)"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <circle cx="256" cy="316" r="70" fill="#07121D" stroke="url(#ringGrad)" stroke-width="8"/>
+    <circle cx="256" cy="316" r="56" fill="url(#ringGrad)" fill-opacity="0.22" stroke="#A5FBFF" stroke-opacity="0.35" stroke-width="2"/>
+    <path d="M240 286L289 316L240 346V286Z" fill="#A8FFF8" opacity="0.95"/>
+    <circle cx="256" cy="316" r="82" stroke="#88F7FF" stroke-opacity="0.22" stroke-width="1.5"/>
+  </g>
+
+  <g filter="url(#softGlow)" stroke="url(#tealGrad)" stroke-linecap="round">
+    <path d="M239 392C248 386 264 386 273 392" stroke-width="5"/>
+    <path d="M232 406C246 395 266 395 280 406" stroke-width="5"/>
+  </g>
+
+  <g fill="#C4FDFF" opacity="0.7">
+    <circle cx="118" cy="110" r="2.2"/>
+    <circle cx="396" cy="124" r="1.8"/>
+    <circle cx="112" cy="372" r="1.8"/>
+    <circle cx="410" cy="360" r="2.1"/>
+    <circle cx="173" cy="138" r="1.6"/>
+    <circle cx="339" cy="150" r="1.6"/>
+  </g>
+</svg>
